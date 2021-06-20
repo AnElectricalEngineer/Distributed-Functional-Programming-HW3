@@ -1,90 +1,44 @@
 -module(my_server).
+-behavior(gen_server).
 -author("Joshua").
 
--behaviour(gen_server).
-
 %% API
--export([start_link/0]).
+-export([start_link/1]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
-%% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
-         code_change/3]).
+% Function that starts a server.
+% Parameters: Name - the name of the server
+% Effects: Starts a new gen server, with the name Name, and module for callback code from the current module.
+start_link(Name) ->
+  gen_server:start_link({local, Name}, ?MODULE, [Name], []).
 
--define(SERVER, ?MODULE).
+% Init function.
+% Parameters: [Name] - a list containing the name of the server
+% Returns: ok, the name of the server, and 0 - the initial number of running tasks
+init([Name]) ->
+  {ok, {Name, 0}}.
 
--record(my_server_state, {}).
+% Implemented handle_call in case request received is numRunningJobs
+% Parameters: numRunningJobs - atom describing message type
+%             Name           - server name
+%             Running Jobs   - current state of server
+% Returns:    Reply - tuple of server name and number of current running jobs
+%             RunningJobs - current server state
+handle_call({numRunningJobs, Name}, _From, RunningJobs) ->
+  Reply = {Name, RunningJobs},
+  {reply, Reply, RunningJobs}.
 
-%%%===================================================================
-%%% API
-%%%===================================================================
+handle_cast(Request, State) ->
+  erlang:error(not_implemented).
 
-%% @doc Spawns the server and registers the local name (unique)
--spec(start_link() ->
-    {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+% Default implementation
+handle_info(_Info, State) ->
+  {noreply, State}.
 
-%%%===================================================================
-%%% gen_server callbacks
-%%%===================================================================
+% Default implementation
+terminate(_Reason, _State) ->
+  ok.
 
-%% @private
-%% @doc Initializes the server
--spec(init(Args :: term()) ->
-    {ok, State :: #my_server_state{}} | {ok, State :: #my_server_state{}, timeout() | hibernate} |
-    {stop, Reason :: term()} | ignore).
-init([]) ->
-    {ok, #my_server_state{}}.
-
-%% @private
-%% @doc Handling call messages
--spec(handle_call(Request :: term(), From :: {pid(), Tag :: term()},
-        State :: #my_server_state{}) ->
-    {reply, Reply :: term(), NewState :: #my_server_state{}} |
-    {reply, Reply :: term(), NewState :: #my_server_state{}, timeout() | hibernate} |
-    {noreply, NewState :: #my_server_state{}} |
-    {noreply, NewState :: #my_server_state{}, timeout() | hibernate} |
-    {stop, Reason :: term(), Reply :: term(), NewState :: #my_server_state{}} |
-    {stop, Reason :: term(), NewState :: #my_server_state{}}).
-handle_call(_Request, _From, State = #my_server_state{}) ->
-    {reply, ok, State}.
-
-%% @private
-%% @doc Handling cast messages
--spec(handle_cast(Request :: term(), State :: #my_server_state{}) ->
-    {noreply, NewState :: #my_server_state{}} |
-    {noreply, NewState :: #my_server_state{}, timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: #my_server_state{}}).
-handle_cast(_Request, State = #my_server_state{}) ->
-    {noreply, State}.
-
-%% @private
-%% @doc Handling all non call/cast messages
--spec(handle_info(Info :: timeout() | term(), State :: #my_server_state{}) ->
-    {noreply, NewState :: #my_server_state{}} |
-    {noreply, NewState :: #my_server_state{}, timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: #my_server_state{}}).
-handle_info(_Info, State = #my_server_state{}) ->
-    {noreply, State}.
-
-%% @private
-%% @doc This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_server terminates
-%% with Reason. The return value is ignored.
--spec(terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
-        State :: #my_server_state{}) -> term()).
-terminate(_Reason, _State = #my_server_state{}) ->
-    ok.
-
-%% @private
-%% @doc Convert process state when code is changed
--spec(code_change(OldVsn :: term() | {down, term()}, State :: #my_server_state{},
-        Extra :: term()) ->
-    {ok, NewState :: #my_server_state{}} | {error, Reason :: term()}).
-code_change(_OldVsn, State = #my_server_state{}, _Extra) ->
-    {ok, State}.
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
+% Default implementation
+code_change(_OldVsn, State, _Extra) ->
+  {ok, State}.
