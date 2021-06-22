@@ -3,8 +3,17 @@
 -author("Joshua").
 
 %% API
--export([init/1]).
+-export([start_link/0, init/1]).
 
+start_link() ->
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-  ServerOneChild = {server1, {server1, }}
+  ServerOneChild = {server1, {my_server, start_link, [server1]},
+    permanent, infinity, worker, [my_server]}, %TODO change infinity -> brutal_kill maybe
+  ServerTwoChild = {server2, {my_server, start_link, [server2]},
+    permanent, infinity, worker, [my_server]},
+  ServerThreeChild = {server3, {my_server, start_link, [server3]},
+    permanent, infinity, worker, [my_serve3]},
+  % TODO maybe change one_for_one -> simple_one_for_one, change 50, 50 to something else
+  {ok, {{one_for_one, 50, 50}, [ServerOneChild, ServerTwoChild, ServerThreeChild]}}.

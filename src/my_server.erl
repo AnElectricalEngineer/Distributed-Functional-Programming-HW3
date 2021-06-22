@@ -18,7 +18,7 @@ start_link(Name) ->
 init([Name]) ->
   {ok, {Name, 0}}.
 
-% Implemented handle_call in case request received is numRunningJobs
+% Implements handle_call in case request received is numRunningJobs
 % Parameters: numRunningJobs - atom describing message type
 %             Name           - server name
 %             Running Jobs   - current state of server
