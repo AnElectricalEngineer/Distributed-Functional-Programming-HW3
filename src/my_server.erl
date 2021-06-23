@@ -9,6 +9,8 @@
 % Function that starts a server.
 % Parameters: Name - the name of the server
 % Effects: Starts a new gen server, with the name Name, and module for callback code from the current module.
+% Server state is defined as: 1) Name
+%                             2) Number of running tasks
 start_link(Name) ->
   gen_server:start_link({local, Name}, ?MODULE, [Name], []).
 
@@ -20,16 +22,28 @@ init([Name]) ->
 
 % Implements handle_call in case request received is numRunningJobs
 % Parameters: numRunningJobs - atom describing message type
-%             Name           - server name
-%             Running Jobs   - current state of server
-% Returns:    Reply - tuple of server name and number of current running jobs
-%             RunningJobs - current server state
-handle_call({numRunningJobs, Name}, _From, RunningJobs) ->
-  Reply = {Name, RunningJobs},
-  {reply, Reply, RunningJobs}.
+%             Running Jobs   - current tasks of server - part of server state
+%             Name           - name of Server - part of server state
+% Returns:    Reply          - number of current running jobs
+%             State          - current server state
+handle_call({numRunningJobs}, _From, {Name, RunningJobs}) ->
+  Reply = RunningJobs,
+  State = {Name, RunningJobs},
+  {reply, Reply, State}.
 
-handle_cast(Request, State) ->
-  erlang:error(not_implemented).
+handle_cast({addTask, From, Function, MsgRef}, {Name, RunningJobs}) ->
+  spawn(fun() -> perform_task(From, Function, MsgRef, Name) end),
+  NewRunningJobs = RunningJobs + 1,
+  {noreply, {Name, NewRunningJobs}};
+
+handle_cast({notifyTaskFinished}, {Name, RunningJobs}) ->
+  NewRunningJobs = RunningJobs - 1,
+  {noreply, {Name, NewRunningJobs}}.
+
+perform_task(From, Function, MsgRef, ServerName) ->
+  F_result = Function(),
+  From ! {MsgRef, F_result},
+  gen_server:cast(ServerName, {notifyTaskFinished}).
 
 % Default implementation
 handle_info(_Info, State) ->
