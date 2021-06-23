@@ -15,5 +15,5 @@ init([]) ->
     permanent, infinity, worker, [my_server]},
   ServerThreeChild = {server3, {my_server, start_link, [server3]},
     permanent, infinity, worker, [my_serve3]},
-  % TODO maybe change one_for_one -> simple_one_for_one, change 50, 50 to something else
+  % TODO change 50, 50 to something else
   {ok, {{one_for_one, 50, 50}, [ServerOneChild, ServerTwoChild, ServerThreeChild]}}.

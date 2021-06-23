@@ -22,24 +22,48 @@ init([Name]) ->
 
 % Implements handle_call in case request received is numRunningJobs
 % Parameters: numRunningJobs - atom describing message type
-%             Running Jobs   - current tasks of server - part of server state
+%             From           - PID of client who sent the request (unused)
 %             Name           - name of Server - part of server state
+%             Running Jobs   - current tasks of server - part of server state
 % Returns:    Reply          - number of current running jobs
-%             State          - current server state
+%             State          - current server state - unchanged
 handle_call({numRunningJobs}, _From, {Name, RunningJobs}) ->
   Reply = RunningJobs,
   State = {Name, RunningJobs},
   {reply, Reply, State}.
 
+% Implements handle_cast in case request received is addTask
+% Spawns a new process to perform the task (in parallel with other tasks).
+% Increases the number of jobs that the server is currently executing by 1.
+% Parameters: addTask        - atom describing message type
+%             From           - PID of client who sent the request
+%             Function       - the function to be performed by the server
+%             MsgRef         - reference number of the received message
+%             Name           - name of Server - part of server state
+%             Running Jobs   - current tasks of server - part of server state
+% Returns:    NewState       - updated server state (numjobs +=1 )
 handle_cast({addTask, From, Function, MsgRef}, {Name, RunningJobs}) ->
   spawn(fun() -> perform_task(From, Function, MsgRef, Name) end),
   NewRunningJobs = RunningJobs + 1,
-  {noreply, {Name, NewRunningJobs}};
+  NewState = {Name, NewRunningJobs},
+  {noreply, NewState};
 
+% Implements handle_cast in case request received is notifyTaskFinished.
+% Decreases the number of jobs that the server is currently executing by 1.
+% Parameters: notifyTaskFinished - atom describing message type
+%             Name               - name of Server - part of server state
+%             Running Jobs       - current tasks of server - part of server state
+% Returns:    NewState           - updated server state (numjobs -=1 )
 handle_cast({notifyTaskFinished}, {Name, RunningJobs}) ->
   NewRunningJobs = RunningJobs - 1,
-  {noreply, {Name, NewRunningJobs}}.
+  NewState = {Name, NewRunningJobs},
+  {noreply, NewState}.
 
+% Function that performs a single function, and returns the reply to the client.
+% Parameters: From       - PID of client to which to send the reply
+%             Function   - function to be performed
+%             MsgRef     - reference number of the message sent
+%             ServerName - server which performs the task
 perform_task(From, Function, MsgRef, ServerName) ->
   F_result = Function(),
   From ! {MsgRef, F_result},
