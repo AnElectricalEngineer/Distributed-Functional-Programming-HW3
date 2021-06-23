@@ -16,13 +16,13 @@ status(StarTime) ->
   getMessages(CurrTime).
 
 whereare() ->
-  io:format("sup pid is: ~p t~n", [whereis(servers_supervisor)]),
+  io:format("sup pid is: ~p t~n", [whereis(server_supervisor)]),
   io:format("Server 1 pid is: ~p t~n", [whereis(server1)]),
   io:format("Server 2 pid is: ~p t~n", [whereis(server2)]),
   io:format("Server 3 pid is: ~p t~n", [whereis(server3)]).
 
 battle() ->
-  compile:file(loadBalance), compile:file(servers),
+  %compile:file(loadBalance), compile:file(servers),
   F3 = fun() -> timer:sleep(3000), 3 * 3 end,
   F5 = fun() -> timer:sleep(10000), 4 * 4 end,
   StarTime = calendar:local_time(),

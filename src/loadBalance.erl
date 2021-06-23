@@ -8,16 +8,15 @@
 startServers() ->
   server_supervisor:start_link().
 
+% Stops the supervisor, which shuts down all the child (servers)
 stopServers() ->
-  % TODO check that this is proper way to terminate children
-  % TODO check that calling these on server_supervisor works - ref used name of server
   supervisor:terminate_child(server_supervisor, server1),
   supervisor:delete_child(server_supervisor, server1),
   supervisor:terminate_child(server_supervisor, server2),
   supervisor:delete_child(server_supervisor, server2),
   supervisor:terminate_child(server_supervisor, server3),
   supervisor:delete_child(server_supervisor, server3),
-  exit(whereis(server_supervisor), normal). % TODO check that this is proper way to exit supervisor, and that using server_supervisor works
+  exit(whereis(server_supervisor), normal).
 
 % Returns the number of tasks that a server (identified by number) is performing
 numberOfRunningFunctions(1) ->
